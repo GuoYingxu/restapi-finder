@@ -1,0 +1,115 @@
+{
+  "name": "request-pointer",
+  "displayName": "Request-pointer",
+  "description": "point the http request in ts/js/vue",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:api.views.explorer",
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": [
+      {
+        "id": "enableapi",
+        "type": "object",
+        "title": "api configuration",
+        "properties": {
+          "api.enable": {
+            "type": "boolean",
+            "default": true,
+            "description": "enable/disable api extension"
+          }
+        }
+      },
+      {
+        "type": "object",
+        "title": "requestInstance recognize",
+        "properties": {
+          "api.requestInstanceRegx": {
+            "type": "string",
+            "default": "Axios|axios|api|uapi",
+            "description": "regex for recognize requestInstance"
+          }
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "api-container",
+          "title": "API LIST",
+          "icon": "resources/api-tree-container.svg"
+        }
+      ]
+    },
+    "views": {
+      "api-container": [
+        {
+          "id": "package-dependencies",
+          "name": "Dependencies"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "api.views.explorer",
+          "name": "api explorer"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "request-pointer.helloWorld",
+        "title": "Hellots"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorFocus",
+          "command": "request-pointer.helloWorld",
+          "group": "navigation@1"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "@vscode/test-electron": "^2.3.2",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "ts-loader": "^9.4.3",
+    "typescript": "^5.1.3",
+    "webpack": "^5.85.0",
+    "webpack-cli": "^5.1.1"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.22.7",
+    "lodash-es": "^4.17.21",
+    "recast": "^0.23.3"
+  }
+}
