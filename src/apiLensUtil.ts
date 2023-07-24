@@ -56,6 +56,28 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
 
   return []
 }
+
+/**
+ * 解析文件
+ * @param document
+ */
+export function parseDocument(document: vscode.TextDocument): Array<ApiModel> {
+  try {
+    const sfile = ts.createSourceFile(
+      document.uri.toString(),
+      document.getText(),
+      ts.ScriptTarget.Latest,
+      true
+    )
+    const collector: Array<ApiModel> = []
+    // 遍历node
+    walker(sfile, collector, document)
+    return collector
+  } catch (e) {
+    console.log(e)
+  }
+  return []
+}
 /**
  * 节点遍历方法
  * @param node
@@ -118,7 +140,6 @@ function match(
       ts.isIdentifier(cnode) &&
       matchRequestLib(cnode.escapedText.toString())
     ) {
-      console.log("-----")
       apiModel = getApiModel(node, document)
     }
   })
@@ -145,7 +166,6 @@ function matchRequestLib(text: string) {
  */
 function getApiModel(node: ts.Node, document: vscode.TextDocument): ApiModel {
   const model: any = { url: "" }
-  console.log(ts.SyntaxKind[node.kind])
   let methodReady = false
   ts.forEachChild(node, cnode => {
     // axios.get|axios.put|axios.patch|axios.delete 形式
@@ -155,7 +175,7 @@ function getApiModel(node: ts.Node, document: vscode.TextDocument): ApiModel {
           ts.isIdentifier(ccnode) &&
           !matchRequestLib(ccnode.escapedText.toString())
         ) {
-          model.method = ccnode.escapedText.toString()
+          model.method = ccnode.escapedText.toString().toUpperCase()
           const textline = document.lineAt(document.positionAt(ccnode.pos))
           model.range = textline.range
           methodReady = true

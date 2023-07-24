@@ -18,18 +18,6 @@
   "contributes": {
     "configuration": [
       {
-        "id": "enableapi",
-        "type": "object",
-        "title": "api configuration",
-        "properties": {
-          "api.enable": {
-            "type": "boolean",
-            "default": true,
-            "description": "enable/disable api extension"
-          }
-        }
-      },
-      {
         "type": "object",
         "title": "requestInstance recognize",
         "properties": {
@@ -93,6 +81,7 @@
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
+    "@types/lodash-es": "^4.17.8",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
     "@types/vscode": "^1.80.0",
