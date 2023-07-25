@@ -4,6 +4,7 @@ import * as vscode from "vscode"
 import { ApiLensProvider } from "./ApiLensProvider"
 import { ApiListDataProvider } from "./ApiOutlineProvider"
 import { ApiExploreDataProvider } from "./apiExploreProvider"
+import { FilterViewProvider } from "./viewProvider"
 let disposables: vscode.Disposable[] = []
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -113,6 +114,26 @@ export function activate(context: vscode.ExtensionContext) {
     )
   )
   disposables.push(explorWorkspaceDisposable, exploreConfigDisposable)
+
+  // 刷新按钮
+  context.subscriptions.push(
+    vscode.commands.registerCommand("RestApiFinder.refreshEntry", () => {
+      apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
+      apiExploreDataProvider.rebuild()
+    }),
+    vscode.commands.registerCommand("RestApiFinder.setfilter", filter => {
+      apiExploreDataProvider.updateFilter(filter)
+    })
+  )
+
+  // search view
+  const viewProvider = new FilterViewProvider(context.extensionUri)
+  const viewDisposable = vscode.window.registerWebviewViewProvider(
+    FilterViewProvider.viewType,
+    viewProvider
+  )
+  context.subscriptions.push(viewDisposable)
+  disposables.push(viewDisposable)
 }
 
 // This method is called when your extension is deactivated

@@ -1,11 +1,13 @@
 import * as vscode from "vscode"
 import { ApiLens, finder } from "./apiLensUtil"
+import * as path from "path"
 export interface ApiNode {
   indexs: number[]
   url: string
   title: string
   range: vscode.Range
   children?: ApiNode[]
+  method: string
 }
 function buildTreeData(list: ApiLens[]): ApiNode[] {
   let map: Map<string, ApiNode> = new Map()
@@ -14,14 +16,16 @@ function buildTreeData(list: ApiLens[]): ApiNode[] {
       const apiNode: ApiNode = {
         indexs: [index],
         url: apilens.rawUrl,
-        title: apilens.label,
+        title: apilens.rawUrl,
         range: apilens.range,
+        method: apilens.method,
         children: [
           {
             indexs: [index, 0],
             url: apilens.rawUrl,
-            title: apilens.label,
+            title: apilens.rawUrl,
             range: apilens.range,
+            method: apilens.method,
           },
         ],
       }
@@ -31,8 +35,9 @@ function buildTreeData(list: ApiLens[]): ApiNode[] {
         node?.children?.push({
           indexs: node.indexs.concat([node.children.length]),
           url: apilens.rawUrl,
-          title: apilens.label,
+          title: apilens.rawUrl,
           range: apilens.range,
+          method: apilens.method,
         })
       }
       map.set(apilens.label, apiNode)
@@ -90,7 +95,36 @@ export class ApiListDataProvider implements vscode.TreeDataProvider<ApiNode> {
         command: "RestApiFinder.api.selection",
         arguments: [element.range],
       },
+      iconPath: this.getIcon(element.method),
     }
+  }
+  public getIcon(name: string) {
+    if (name === "GET") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "GET.svg")
+      )
+    }
+    if (name === "PUT") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "PUT.svg")
+      )
+    }
+    if (name === "DELETE") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "DEL.svg")
+      )
+    }
+    if (name === "PATCH") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "PAT.svg")
+      )
+    }
+    if (name === "POST") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "POST.svg")
+      )
+    }
+    return void 0
   }
 
   public getChildren(element?: ApiNode): ApiNode[] {

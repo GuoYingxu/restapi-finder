@@ -1,8 +1,9 @@
-import { resolveCliArgsFromVSCodeExecutablePath } from "@vscode/test-electron";
-import { globby } from "globby";
-import * as vscode from "vscode";
-import { entries, escapeRegExp, flatten } from "lodash-es";
-import { ApiModel, parseDocument } from "./apiLensUtil";
+import { resolveCliArgsFromVSCodeExecutablePath } from "@vscode/test-electron"
+import { globby } from "globby"
+import * as vscode from "vscode"
+import { some, flatten } from "lodash-es"
+import { ApiModel, parseDocument } from "./apiLensUtil"
+import * as path from "path"
 
 export interface ApiFileNode {
   // indexs:number[]
@@ -19,105 +20,173 @@ export interface ApiFileNode {
   isFolder: boolean
   range?: vscode.Range
   module?: string
-  method?:string
-  url?:string
+  method?: string
+  url?: string
+  count?: number
 }
-let nodes: ApiFileNode[] = [];
-let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = [];
-let categories: string[] = [];
-let apiMap: Map<string, ApiFileNode[]> = new Map();
-let fileParseMap:Map<string,ApiModel[]> = new Map();
-export class ApiFileModel {
-  private _treeData: ApiFileNode[] = [];
-  public get roots(): ApiFileNode[] {
-    //const editor = vscode.window.activeTextEditor;
-    return this._treeData;
-  }
-
-  public getChildren(parent: ApiFileNode): ApiFileNode[] {
-    return [];
-  }
-}
+let nodes: ApiFileNode[] = []
+let workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = []
+let categories: string[] = []
+let apiMap: Map<string, ApiFileNode[]> = new Map()
+let fileParseMap: Map<string, ApiModel[]> = new Map()
+let modules: any[] | undefined
+let moduleNames: string[] = []
 export class ApiExploreDataProvider
   implements vscode.TreeDataProvider<ApiFileNode>
 {
+  private _filter: string = ""
   private _onDidChangeTreeData: vscode.EventEmitter<
     ApiFileNode | undefined | void
-  > = new vscode.EventEmitter<ApiFileNode | undefined | void>();
+  > = new vscode.EventEmitter<ApiFileNode | undefined | void>()
   readonly onDidChangeTreeData?: vscode.Event<void | ApiFileNode | undefined> =
-    this._onDidChangeTreeData.event;
+    this._onDidChangeTreeData.event
 
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly model: ApiFileModel = new ApiFileModel()
-  ) {
+  constructor(private readonly context: vscode.ExtensionContext) {
     this.context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration(() => this.didChange())
-    );
+    )
     this.context.subscriptions.push(
       vscode.window.onDidChangeActiveTextEditor(() => this.didChange())
-    );
+    )
   }
   public refresh(): any {
-    console.log("fire");
-    this._onDidChangeTreeData.fire();
+    this._onDidChangeTreeData.fire()
   }
 
   public getTreeItem(element: ApiFileNode): vscode.TreeItem {
     return {
       label: this.getLabel(element),
-      collapsibleState:element.isWorkspaceNode? vscode.TreeItemCollapsibleState.Expanded : element.type === 'range' ?vscode.TreeItemCollapsibleState.None :  vscode.TreeItemCollapsibleState.Collapsed,
+      collapsibleState:
+        element.isWorkspaceNode || element.type == "appName"
+          ? vscode.TreeItemCollapsibleState.Expanded
+          : element.type === "range"
+          ? vscode.TreeItemCollapsibleState.None
+          : vscode.TreeItemCollapsibleState.Collapsed,
       command: {
         title: "open",
         command: "api-file.openurl",
-        arguments: [element.fsPath,element.range],
+        arguments: [element.fsPath, element.range],
       },
-      iconPath: this.getIcon(element)
-    };
+      iconPath: this.getIcon(element),
+    }
   }
-  public  getLabel(element:ApiFileNode):vscode.TreeItemLabel | string {
-    if(element.type === 'api') {
-      return {
-        label: element.label,
-        highlights:  element.method ? [[0,element.method?.length ]] :void 0
-      };
+  /** 着色 */
+  public getLabel(element: ApiFileNode): vscode.TreeItemLabel | string {
+    // if (element.type === "api") {
+    //   return {
+    //     label: element.label,
+    //     // highlights: element.method ? [[0, element.method?.length]] : void 0,
+    //   }
+    // }
+    if (element.type === "appName") {
+      return element.label + `(${element.count})`
     }
-    return element.label;
+    return element.label
   }
-  public getIcon(element:ApiFileNode) {
-    if(element.type === 'file') {
-      return vscode.ThemeIcon.File;
+  public getIcon(element: ApiFileNode) {
+    if (element.type === "file") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "code.svg")
+      )
     }
-    if(element.type === 'appName') {
-      return vscode.ThemeIcon.Folder;
+    if (element.type === "range") {
+      return new vscode.ThemeIcon("eye")
     }
-    return undefined;
+    if (element.type === "appName") {
+      return this.context.asAbsolutePath(
+        path.join("resources/icons", "API.svg")
+      )
+    }
+    if (element.type === "api") {
+      if (element.method === "GET") {
+        return this.context.asAbsolutePath(
+          path.join("resources/icons", "GET.svg")
+        )
+      }
+      if (element.method === "PUT") {
+        return this.context.asAbsolutePath(
+          path.join("resources/icons", "PUT.svg")
+        )
+      }
+      if (element.method === "DELETE") {
+        return this.context.asAbsolutePath(
+          path.join("resources/icons", "DEL.svg")
+        )
+      }
+      if (element.method === "PATCH") {
+        return this.context.asAbsolutePath(
+          path.join("resources/icons", "PAT.svg")
+        )
+      }
+      if (element.method === "POST") {
+        return this.context.asAbsolutePath(
+          path.join("resources/icons", "POST.svg")
+        )
+      }
+    }
+    return void 0
   }
   public getChildren(element?: ApiFileNode): ApiFileNode[] {
     if (element === undefined) {
-      return nodes;
+      return nodes
     }
-    return element.nodes;
+    if (this._filter) {
+      let children = element.nodes.map(node => {
+        if (node.type === "api") {
+          if (new RegExp(`${this._filter}`, "ig").test(node.label)) {
+            node.visible = true
+          } else {
+            node.visible = false
+          }
+        }
+        if (node.type === "appName") {
+          let c = node.nodes.filter(n => {
+            let match = new RegExp(`${this._filter}`, "ig").test(n.label)
+            return match
+          })
+          if (c.length > 0) {
+            node.visible = true
+            node.count = c.length
+          } else {
+            node.visible = false
+          }
+        }
+        return node
+      })
+      return children
+        .filter(node => {
+          return node.visible
+        })
+        .sort((a, b) => (a.label > b.label ? 1 : -1))
+    }
+    return element.nodes.sort((a, b) => (a.label > b.label ? 1 : -1))
   }
-
+  public updateFilter(filter: string) {
+    this._filter = filter
+    this.didChange()
+  }
   public didChange() {
-    console.log("didChange");
-    this.refresh();
+    this.refresh()
   }
   public async clear(folders: readonly vscode.WorkspaceFolder[] | undefined) {
-    nodes = [];
-    categories = [];
-    apiMap.clear();
-    fileParseMap.clear();
-    workspaceFolders = folders;
-    addWorkspaceFolders();
+    nodes = []
+    categories = []
+    apiMap.clear()
+    fileParseMap.clear()
+    workspaceFolders = folders
+    addWorkspaceFolders()
   }
 
   /**
    * 重新构建树
    */
   public async rebuild() {
-  
+    modules = vscode.workspace.getConfiguration().get("api.modules")
+
+    if (modules) {
+      moduleNames = flatten(modules.map(s => Object.keys(s)))
+    }
+
     if (workspaceFolders) {
       const paths = flatten(
         await Promise.all(
@@ -131,9 +200,9 @@ export class ApiExploreDataProvider
             })
           )
         )
-      );
+      )
       await Promise.all(
-        paths.map(async (entry) => {
+        paths.map(async entry => {
           // 解析文件
           if (
             entry.dirent.isFile() &&
@@ -141,21 +210,28 @@ export class ApiExploreDataProvider
           ) {
             const document = await vscode.workspace.openTextDocument(
               vscode.Uri.file(entry.path)
-            );
-            let collector:ApiModel[] = [];
-            if(fileParseMap.has(entry.path)){
-              collector =  [];
-            }else {
-              collector = parseDocument(document);
-              fileParseMap.set(entry.path,collector);
+            )
+            let collector: ApiModel[] = []
+            if (fileParseMap.has(entry.path)) {
+              collector = []
+            } else {
+              collector = parseDocument(document)
+              fileParseMap.set(entry.path, collector)
             }
-            
+
             collector.forEach((m: ApiModel) => {
-              const appName = m.url.replace(/.*\/api\/(.*?)\/.*/, "$1");
+              let appName = m.url.replace(/.*\/api\/(.*?)\/.*/gi, "$1")
+              if (!moduleNames.includes(appName)) {
+                appName = "unDefinedModule"
+              }
               const apiNode: ApiFileNode = {
                 isWorkspaceNode: false,
                 type: "api",
-                label: `${m.method}:${m.url}`,
+                label: ["GET", "POST", "DELETE", "PATCH", "PUT"].includes(
+                  m.method
+                )
+                  ? m.url
+                  : `${m.method}:${m.url}`,
                 nodes: [],
                 fsPath: entry.path,
                 visible: true,
@@ -163,102 +239,105 @@ export class ApiExploreDataProvider
                 range: m.range,
                 module: appName,
                 method: m.method,
-                url:m.url
-              };
+                url: m.url,
+              }
               if (appName) {
-                // console.log("cateeeee", appName)
                 if (categories.indexOf(appName) < 0) {
-                  categories.push(appName);
+                  categories.push(appName)
                 }
               }
               if (apiMap.get(apiNode.label)) {
-                apiMap.get(apiNode.label)?.push(apiNode);
+                apiMap.get(apiNode.label)?.push(apiNode)
               } else {
-                apiMap.set(apiNode.label, [apiNode]);
+                apiMap.set(apiNode.label, [apiNode])
               }
-            });
+            })
           }
         })
-      );
-      buildTree();
+      )
+      buildTree()
     }
-    this.refresh();
+    this.refresh()
   }
 }
 function buildTree() {
   nodes.forEach(rootNode => {
-    console.log(categories);
-    rootNode.nodes = [];
+    rootNode.nodes = []
     categories.forEach(cate => {
-      // console.log("name.....", cate)
       const childrens = Array.from(apiMap.keys()).filter(path => {
-        return path.indexOf("api/" + cate) >= 0;
-      });
-      // console.log("childrens", cate, childrens)
-      const list = childrens.map(key => buildChild(key,rootNode)).sort((a,b) => a.label > b.label ? 1:-1);
-       
+        const temp = apiMap.get(path)
+        if (temp && temp.length > 0) {
+          return temp[0].module === cate
+        }
+        return false
+      })
+      const list = childrens
+        .map(key => buildChild(key, rootNode))
+        .sort((a, b) => (a.label > b.label ? 1 : -1))
+
       rootNode.nodes.push({
         isWorkspaceNode: false,
         type: "appName",
         label: cate,
         nodes: list,
         fsPath: rootNode.fsPath,
+        count: list.length,
         visible: true,
         isFolder: false,
-      });
-    });
-    console.log(rootNode.nodes);
-  });
+      })
+    })
+  })
 }
-function buildChild(key: string,rootNode:ApiFileNode): ApiFileNode {
-  const list = apiMap.get(key);
-  let fnodes: ApiFileNode[] = [];
+function buildChild(key: string, rootNode: ApiFileNode): ApiFileNode {
+  const list = apiMap.get(key)
+  let fnodes: ApiFileNode[] = []
   if (list) {
-    const tempMap:Map<string,string> = new Map();
+    const tempMap: Map<string, string> = new Map()
     list.forEach(node => {
-      const rangeNodes:ApiFileNode[] = list.filter((n:ApiFileNode) => n.fsPath === node.fsPath);
-      if(!tempMap.has(node.fsPath)) {
-        tempMap.set(node.fsPath,node.label);
-      const clist = rangeNodes.map(n =>  ({
-        isWorkspaceNode:false,
-        type:'range',
-        label: `line ${n.range?.start.line}:[${n.range?.start.character},${n.range?.end.character}]`,
-        nodes:[],
-        fsPath:n.fsPath,
-        visible:true,
-        isFolder:false,
-        range:n.range,
-        module: n.module
-      }));
-      
-      fnodes.push( {
-        isWorkspaceNode: false,
-        type: "file",
-        label: node.fsPath.split(`/${rootNode.label}/`)[1],
-        nodes: clist,
-        fsPath: node.fsPath,
-        visible: true,
-        isFolder: false,
-        range:node.range,
-        module: node.module,
-      });
-    }
-    });
+      const rangeNodes: ApiFileNode[] = list.filter(
+        (n: ApiFileNode) => n.fsPath === node.fsPath
+      )
+      if (!tempMap.has(node.fsPath)) {
+        tempMap.set(node.fsPath, node.label)
+        const clist = rangeNodes.map(n => ({
+          isWorkspaceNode: false,
+          type: "range",
+          label: `line ${n.range?.start.line}:[${n.range?.start.character},${n.range?.end.character}]`,
+          nodes: [],
+          fsPath: n.fsPath,
+          visible: true,
+          isFolder: false,
+          range: n.range,
+          module: n.module,
+        }))
+
+        fnodes.push({
+          isWorkspaceNode: false,
+          type: "file",
+          label: node.fsPath.split(`/${rootNode.label}/`)[1],
+          nodes: clist,
+          fsPath: node.fsPath,
+          visible: true,
+          isFolder: false,
+          range: node.range,
+          module: node.module,
+        })
+      }
+    })
   }
-  let module ="";
-  let method = "";
-  let url = "";
-  const orign = apiMap.get(key);
-  if(orign && orign?.length>0) {
-    module = orign[0].module || '';
-    method = orign[0].method || '';
-    url = orign[0].url || '';
-    
+  let module = ""
+  let method = ""
+  let url = ""
+  const orign = apiMap.get(key)
+  if (orign && orign?.length > 0) {
+    module = orign[0].module || ""
+    method = orign[0].method || ""
+    url = orign[0].url || ""
   }
   return {
     isWorkspaceNode: false,
     type: "api",
-    label: key + "(" + fnodes.length + ")",
+    label: key,
     fsPath: key,
     nodes: fnodes,
     visible: true,
@@ -266,15 +345,14 @@ function buildChild(key: string,rootNode:ApiFileNode): ApiFileNode {
     method,
     module,
     url,
-  };
+  }
 }
 
 function addWorkspaceFolders() {
   if (workspaceFolders) {
     workspaceFolders.map(async folder => {
-      nodes.push(createWorkspaceRootNode(folder));
-      console.log("nodepush", nodes);
-    });
+      nodes.push(createWorkspaceRootNode(folder))
+    })
   }
 }
 
@@ -290,6 +368,6 @@ function createWorkspaceRootNode(folder: vscode.WorkspaceFolder): ApiFileNode {
         : folder.uri.authority + folder.uri.fsPath,
     visible: true,
     isFolder: true,
-  };
-  return node;
+  }
+  return node
 }

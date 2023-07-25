@@ -9,6 +9,10 @@
   "categories": [
     "Other"
   ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:typescript"
@@ -22,7 +26,7 @@
         "properties": {
           "api.requestInstanceRegx": {
             "type": "string",
-            "default": "Axios|axios|api|uapi",
+            "default": "^(Axios|axios|api|uapi)$",
             "description": "regex for recognize requestInstance"
           },
           "api.modules": {
@@ -53,15 +57,21 @@
         {
           "id": "api-container",
           "title": "API LIST",
-          "icon": "resources/api-tree-container.svg"
+          "icon": "resources/icons/api-tree-container.svg"
         }
       ]
     },
     "views": {
       "api-container": [
         {
+          "type": "webview",
+          "id": "api.views.search",
+          "name": "filter",
+          "initialSize": 300
+        },
+        {
           "id": "api-tree-view",
-          "name": "Dependencies"
+          "name": "All Request"
         }
       ],
       "explorer": [
@@ -70,7 +80,30 @@
           "name": "api explorer"
         }
       ]
-    }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "RestApiFinder.refreshEntry",
+          "when": "view == api-tree-view",
+          "group": "navigation"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "RestApiFinder.refreshEntry",
+        "title": "Refresh Tree",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "RestApiFinder.setfilter",
+        "title": "set filter"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

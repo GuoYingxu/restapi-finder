@@ -4,11 +4,13 @@ export class ApiLens extends vscode.CodeLens {
   private _fileName: string
   private _url: string
   private _title: string
+  private _method: string
   constructor(
     filename: string,
     range: vscode.Range,
     title: string,
-    url: string
+    url: string,
+    method: string
   ) {
     super(range, {
       arguments: ["1", false],
@@ -18,12 +20,16 @@ export class ApiLens extends vscode.CodeLens {
     this._url = url
     this._fileName = filename
     this._title = title
+    this._method = method
   }
   get label() {
     return this._title.replace(/\${.*?}/g, ":param")
   }
   get rawUrl() {
     return this._url.replace(/\${.*?}/g, ":param")
+  }
+  get method() {
+    return this._method.toUpperCase()
   }
 
   get filename() {
@@ -47,7 +53,8 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
         document.uri.toString(),
         model.range,
         `${model.method?.toUpperCase()}:${model.url}`,
-        model.url
+        model.url,
+        model.method
       )
     })
   } catch (e) {
@@ -118,7 +125,6 @@ function match(
   node: ts.Node,
   document: vscode.TextDocument
 ): ApiModel | undefined {
-  let isMatched = false
   let apiModel: ApiModel | undefined
   // 1. callExpression ->PropertyAccessExpression ->Identifier  is axios
   // 2. callExpression ->Identifier  is axios
@@ -155,9 +161,10 @@ function matchRequestLib(text: string) {
     .getConfiguration()
     .get("api.requestInstanceRegx")
   if (!regexString) {
-    regexString = "Axios|uapi|api"
+    regexString = "^(Axios|uapi|api)$"
   }
-  return new RegExp(regexString, "ig").test(text)
+  const result = new RegExp(regexString, "ig").test(text)
+  return result
 }
 /**
  * 解析apiModel
@@ -201,14 +208,12 @@ function getApiModel(node: ts.Node, document: vscode.TextDocument): ApiModel {
                   ts.isIdentifier(cccnode) &&
                   (cccnode.text === "method" || cccnode.text === "url")
                 ) {
-                  key =
-                    cccnode.text === "method"
-                      ? cccnode.text.toUpperCase()
-                      : cccnode.text
+                  key = cccnode.text
                   i++
                 } else if (i === 1 && key) {
+                  const value = caculateExpressionText(cccnode)
                   //第二个参数为值
-                  model[key] = caculateExpressionText(cccnode)
+                  model[key] = key === "method" ? value.toUpperCase() : value
                   i++
                 }
               })
