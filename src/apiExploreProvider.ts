@@ -1,7 +1,6 @@
-import { resolveCliArgsFromVSCodeExecutablePath } from "@vscode/test-electron"
 import { globby } from "globby"
 import * as vscode from "vscode"
-import { some, flatten } from "lodash-es"
+import { flatten } from "lodash-es"
 import { ApiModel, parseDocument } from "./apiLensUtil"
 import * as path from "path"
 
