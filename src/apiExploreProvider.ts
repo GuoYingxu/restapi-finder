@@ -206,7 +206,7 @@ export class ApiExploreDataProvider
           // 解析文件
           if (
             entry.dirent.isFile() &&
-            entry.name.match(/\.(ts|js)$/) !== null
+            entry.name.match(/\.(ts|js|vue)$/i) !== null
           ) {
             const document = await vscode.workspace.openTextDocument(
               vscode.Uri.file(entry.path)
