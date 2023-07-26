@@ -138,5 +138,8 @@
     "globby": "^13.2.2",
     "lodash-es": "^4.17.21",
     "recast": "^0.23.3"
+  },
+  "repository": {
+    "url": "https://github.com/GuoYingxu/restapi-finder.git"
   }
 }
