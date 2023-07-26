@@ -68,72 +68,72 @@ export function activate(context: vscode.ExtensionContext) {
   )
   // -- explore tree
 
-  var apiExporeTreeView = vscode.window.createTreeView("api-tree-view", {
-    treeDataProvider: apiExploreDataProvider,
-  })
+  // var apiExporeTreeView = vscode.window.createTreeView("api-tree-view", {
+  //   treeDataProvider: apiExploreDataProvider,
+  // })
 
-  // context.subscriptions.push(apiExploreDataProvider)
-  context.subscriptions.push(apiExporeTreeView)
+  // // context.subscriptions.push(apiExploreDataProvider)
+  // context.subscriptions.push(apiExporeTreeView)
 
-  const explorWorkspaceDisposable =
-    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-      apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
-      await apiExploreDataProvider.rebuild()
-    })
-  const exploreConfigDisposable = vscode.workspace.onDidChangeConfiguration(
-    async e => {
-      apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
-      await apiExploreDataProvider.rebuild()
-    }
-  )
-  context.subscriptions.push(explorWorkspaceDisposable, exploreConfigDisposable)
-  apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
-  apiExploreDataProvider.rebuild()
-  context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "api-file.openurl",
-      (fsPath: string, range: vscode.Range) => {
-        vscode.workspace
-          .openTextDocument(vscode.Uri.file(fsPath))
-          .then(document => {
-            vscode.window.showTextDocument(document, { preview: false })
-          })
-          .then(() => {
-            const textEditor = vscode.window.activeTextEditor
-            if (!textEditor) {
-              return
-            }
-            const selection = new vscode.Selection(range.start, range.end)
-            textEditor.selection = selection
-            textEditor.revealRange(
-              selection,
-              vscode.TextEditorRevealType.Default
-            )
-          })
-      }
-    )
-  )
-  disposables.push(explorWorkspaceDisposable, exploreConfigDisposable)
+  // const explorWorkspaceDisposable =
+  //   vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+  //     apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
+  //     await apiExploreDataProvider.rebuild()
+  //   })
+  // const exploreConfigDisposable = vscode.workspace.onDidChangeConfiguration(
+  //   async e => {
+  //     apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
+  //     await apiExploreDataProvider.rebuild()
+  //   }
+  // )
+  // context.subscriptions.push(explorWorkspaceDisposable, exploreConfigDisposable)
+  // apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
+  // apiExploreDataProvider.rebuild()
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand(
+  //     "api-file.openurl",
+  //     (fsPath: string, range: vscode.Range) => {
+  //       vscode.workspace
+  //         .openTextDocument(vscode.Uri.file(fsPath))
+  //         .then(document => {
+  //           vscode.window.showTextDocument(document, { preview: false })
+  //         })
+  //         .then(() => {
+  //           const textEditor = vscode.window.activeTextEditor
+  //           if (!textEditor) {
+  //             return
+  //           }
+  //           const selection = new vscode.Selection(range.start, range.end)
+  //           textEditor.selection = selection
+  //           textEditor.revealRange(
+  //             selection,
+  //             vscode.TextEditorRevealType.Default
+  //           )
+  //         })
+  //     }
+  //   )
+  // )
+  // disposables.push(explorWorkspaceDisposable, exploreConfigDisposable)
 
-  // 刷新按钮
-  context.subscriptions.push(
-    vscode.commands.registerCommand("RestApiFinder.refreshEntry", () => {
-      apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
-      apiExploreDataProvider.rebuild()
-    }),
-    vscode.commands.registerCommand("RestApiFinder.setfilter", filter => {
-      apiExploreDataProvider.updateFilter(filter)
-    })
-  )
+  // // 刷新按钮
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand("RestApiFinder.refreshEntry", () => {
+  //     apiExploreDataProvider.clear(vscode.workspace.workspaceFolders)
+  //     apiExploreDataProvider.rebuild()
+  //   }),
+  //   vscode.commands.registerCommand("RestApiFinder.setfilter", filter => {
+  //     apiExploreDataProvider.updateFilter(filter)
+  //   })
+  // )
 
-  // search view
-  const viewProvider = new FilterViewProvider(context.extensionUri)
-  const viewDisposable = vscode.window.registerWebviewViewProvider(
-    FilterViewProvider.viewType,
-    viewProvider
-  )
-  context.subscriptions.push(viewDisposable)
-  disposables.push(viewDisposable)
+  // // search view
+  // const viewProvider = new FilterViewProvider(context.extensionUri)
+  // const viewDisposable = vscode.window.registerWebviewViewProvider(
+  //   FilterViewProvider.viewType,
+  //   viewProvider
+  // )
+  // context.subscriptions.push(viewDisposable)
+  // disposables.push(viewDisposable)
 }
 
 // This method is called when your extension is deactivated
