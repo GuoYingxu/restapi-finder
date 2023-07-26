@@ -1,5 +1,9 @@
 # Change Log
 
-## [1.0.0]
+## [0.0.1]
 
-- Initial release
+- first release
+
+## [0.0.2]
+
+- fixed: 解析模板字符串错误

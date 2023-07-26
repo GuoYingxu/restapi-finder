@@ -2,7 +2,7 @@
   "name": "RestApiFinder",
   "displayName": "RestApiFinder",
   "description": "point the http request in ts/js/vue",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "keywords": [
     "api"
   ],
