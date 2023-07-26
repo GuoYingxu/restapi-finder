@@ -282,7 +282,6 @@ function caculateExpressionText(node: ts.Node) {
     })
     return res
   }
-  console.log(node.getText())
   return node.getText()
 }
 
