@@ -1,10 +1,18 @@
 import * as vscode from "vscode"
 import * as ts from "typescript"
+import DataCenter from "./DataCenter"
+export interface ServerApi {
+  method: string
+  rawUrl: string
+  serverName: string
+}
 export class ApiLens extends vscode.CodeLens {
   private _fileName: string
   private _url: string
   private _title: string
   private _method: string
+  private _exist: boolean = false
+  private _serverName: string = ""
   constructor(
     filename: string,
     range: vscode.Range,
@@ -22,8 +30,17 @@ export class ApiLens extends vscode.CodeLens {
     this._title = title
     this._method = method
   }
+
+  /** @override */
+  get title() {
+    return this.label
+  }
+
   get label() {
-    return this._title.replace(/\${.*?}/g, ":param")
+    return (
+      this._title.replace(/\${.*?}/g, ":param") +
+      `(${this.exist ? this.serverName : "未找到服务"})`
+    )
   }
   get rawUrl() {
     return this._url.replace(/\${.*?}/g, ":param")
@@ -32,8 +49,35 @@ export class ApiLens extends vscode.CodeLens {
     return this._method.toUpperCase()
   }
 
-  get filename() {
+  get filename(): string {
     return this._fileName
+  }
+  get serverName(): string {
+    return this._serverName
+  }
+  get exist() {
+    return this._exist
+  }
+  set exist(value: boolean) {
+    this._exist = value
+  }
+  set serverName(value: string) {
+    this._serverName = value
+  }
+  mergeOfList(list: ServerApi[]) {
+    if (list === null) {
+      return
+    }
+    if (list.length === 0) {
+      return
+    }
+    const target = list.find(
+      s => s.method === this.method.toUpperCase() && s.rawUrl === this.rawUrl
+    )
+    if (target) {
+      this._exist = true
+      this._serverName = target.serverName
+    }
   }
 }
 
@@ -49,10 +93,20 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
     // 遍历node
     walker(sfile, collector, document)
     return collector.map(model => {
+      const key = model.url.replace(/\${.*?}/g, ":param")
+      const api = DataCenter.getServerApi(key)
+      let exist = false
+      let serverName = ""
+      if (api) {
+        exist = true
+        serverName = api.serverName
+      }
+
       return new ApiLens(
         document.uri.toString(),
         model.range,
-        `${model.method?.toUpperCase()}:${model.url}`,
+        `${model.method?.toUpperCase()}:${model.url}` +
+          ` [${exist ? serverName : "找不到该接口"} ]`,
         model.url,
         model.method
       )

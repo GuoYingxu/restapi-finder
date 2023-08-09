@@ -141,6 +141,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.22.7",
+    "axios": "^1.4.0",
     "globby": "^13.2.2",
     "lodash-es": "^4.17.21",
     "recast": "^0.23.3"

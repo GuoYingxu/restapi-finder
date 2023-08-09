@@ -3,6 +3,7 @@ import * as vscode from "vscode"
 import { flatten } from "lodash-es"
 import { ApiModel, parseDocument } from "./apiLensUtil"
 import * as path from "path"
+import DataCenter from "./DataCenter"
 
 export interface ApiFileNode {
   // indexs:number[]
@@ -223,14 +224,21 @@ export class ApiExploreDataProvider
               if (!moduleNames.includes(appName)) {
                 appName = "unDefinedModule"
               }
+              const rawUrl = m.url.replace(/\${.*?}/g, ":param")
+              let sapi = DataCenter.getServerApi(rawUrl)
+              let appendStr = ""
+              if (sapi) {
+                appendStr = ``
+              } else {
+                appendStr = "[未找到]"
+              }
               const apiNode: ApiFileNode = {
                 isWorkspaceNode: false,
                 type: "api",
-                label: ["GET", "POST", "DELETE", "PATCH", "PUT"].includes(
-                  m.method
-                )
-                  ? m.url
-                  : `${m.method}:${m.url}`,
+                label:
+                  (["GET", "POST", "DELETE", "PATCH", "PUT"].includes(m.method)
+                    ? m.url
+                    : `${m.method}:${m.url}`) + appendStr,
                 nodes: [],
                 fsPath: entry.path,
                 visible: true,

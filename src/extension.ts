@@ -5,6 +5,9 @@ import { ApiLensProvider } from "./ApiLensProvider"
 import { ApiListDataProvider } from "./ApiOutlineProvider"
 import { ApiExploreDataProvider } from "./apiExploreProvider"
 import { FilterViewProvider } from "./viewProvider"
+import axios from "axios"
+import DataCenter from "./DataCenter"
+import { ServerApi } from "./apiLensUtil"
 let disposables: vscode.Disposable[] = []
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -114,6 +117,22 @@ export function activate(context: vscode.ExtensionContext) {
     )
   )
   disposables.push(explorWorkspaceDisposable, exploreConfigDisposable)
+
+  axios.get("http://localhost:3000/apimanage/serverapiforPlugin").then(res => {
+    res.data.forEach((api: any) => {
+      if (!api.method || !api.puri) return
+      let rawUrl = ""
+      if (api.puri && api.puri.indexOf("=>") > 0) {
+        rawUrl = `/api/${api.server}/${api.puri.split("=>")[1]}`
+      }
+      const sapi: ServerApi = {
+        serverName: api.server,
+        rawUrl: rawUrl,
+        method: api.method.toUpperCase(),
+      }
+      DataCenter.addServerApi(sapi)
+    })
+  })
 
   // 刷新按钮
   context.subscriptions.push(
