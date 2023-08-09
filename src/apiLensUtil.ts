@@ -105,8 +105,7 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
       return new ApiLens(
         document.uri.toString(),
         model.range,
-        `${model.method?.toUpperCase()}:${model.url}` +
-          ` [${exist ? serverName : "找不到该接口"} ]`,
+        ` [${exist ? "所属服务" + serverName : "未从服务中找到该接口"} ]`,
         model.url,
         model.method
       )
