@@ -1,33 +1,83 @@
 import * as vscode from "vscode";
 import * as ts from "typescript";
+import DataCenter from "./DataCenter";
+export interface ServerApi {
+  method: string
+  rawUrl: string
+  serverName: string
+}
 export class ApiLens extends vscode.CodeLens {
   private _fileName: string;
   private _url: string;
   private _title: string;
+  private _method: string;
+  private _exist: boolean = false;
+  private _serverName: string = "";
   constructor(
     filename: string,
     range: vscode.Range,
     title: string,
-    url: string
+    url: string,
+    method: string
   ) {
     super(range, {
       arguments: ["1", false],
-      command: "request-pointer.codelensAction",
+      command: "RestApiFinder.codelensAction",
       title: title,
     });
     this._url = url;
     this._fileName = filename;
     this._title = title;
+    this._method = method;
   }
+
+  /** @override */
+  get title() {
+    return this.label;
+  }
+
   get label() {
-    return this._title.replace(/\${.*?}/g, ":param");
+    return (
+      this._title.replace(/\${.*?}/g, ":param") +
+      `(${this.exist ? this.serverName : "未找到服务"})`
+    );
   }
   get rawUrl() {
     return this._url.replace(/\${.*?}/g, ":param");
   }
+  get method() {
+    return this._method.toUpperCase();
+  }
 
-  get filename() {
+  get filename(): string {
     return this._fileName;
+  }
+  get serverName(): string {
+    return this._serverName;
+  }
+  get exist() {
+    return this._exist;
+  }
+  set exist(value: boolean) {
+    this._exist = value;
+  }
+  set serverName(value: string) {
+    this._serverName = value;
+  }
+  mergeOfList(list: ServerApi[]) {
+    if (list === null) {
+      return;
+    }
+    if (list.length === 0) {
+      return;
+    }
+    const target = list.find(
+      s => s.method === this.method.toUpperCase() && s.rawUrl === this.rawUrl
+    );
+    if (target) {
+      this._exist = true;
+      this._serverName = target.serverName;
+    }
   }
 }
 
@@ -43,11 +93,21 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
     // 遍历node
     walker(sfile, collector, document);
     return collector.map(model => {
+      const key = model.url.replace(/\${.*?}/g, ":param");
+      const api = DataCenter.getServerApi(key);
+      let exist = false;
+      let serverName = "";
+      if (api) {
+        exist = true;
+        serverName = api.serverName;
+      }
+
       return new ApiLens(
         document.uri.toString(),
         model.range,
-        `${model.method?.toUpperCase()}:${model.url}`,
-        model.url
+        ` [${exist ? "所属服务" + serverName : "未从服务中找到该接口"} ]`,
+        model.url,
+        model.method
       );
     });
   } catch (e) {
@@ -118,7 +178,6 @@ function match(
   node: ts.Node,
   document: vscode.TextDocument
 ): ApiModel | undefined {
-  let isMatched = false;
   let apiModel: ApiModel | undefined;
   // 1. callExpression ->PropertyAccessExpression ->Identifier  is axios
   // 2. callExpression ->Identifier  is axios
@@ -155,9 +214,10 @@ function matchRequestLib(text: string) {
     .getConfiguration()
     .get("api.requestInstanceRegx");
   if (!regexString) {
-    regexString = "Axios|uapi|api";
+    regexString = "^(Axios|uapi|api)$";
   }
-  return new RegExp(regexString, "ig").test(text);
+  const result = new RegExp(regexString, "ig").test(text);
+  return result;
 }
 /**
  * 解析apiModel
@@ -201,11 +261,12 @@ function getApiModel(node: ts.Node, document: vscode.TextDocument): ApiModel {
                   ts.isIdentifier(cccnode) &&
                   (cccnode.text === "method" || cccnode.text === "url")
                 ) {
-                  key =  cccnode.text === 'method' ? cccnode.text.toUpperCase()  : cccnode.text;
+                  key = cccnode.text;
                   i++;
                 } else if (i === 1 && key) {
+                  const value = caculateExpressionText(cccnode);
                   //第二个参数为值
-                  model[key] = caculateExpressionText(cccnode);
+                  model[key] = key === "method" ? value.toUpperCase() : value;
                   i++;
                 }
               });
@@ -274,7 +335,7 @@ function caculateExpressionText(node: ts.Node) {
     });
     return res;
   }
-  return "";
+  return node.getText();
 }
 
 /**
@@ -283,7 +344,9 @@ function caculateExpressionText(node: ts.Node) {
  * @returns
  */
 function getUrl(url: string) {
-  if (!url) {return "";};
+  if (!url) {
+    return "";
+  }
   url = url.replace(/`/g, "");
   if (url.indexOf("?") > 0) {
     return url.split("?")[0];

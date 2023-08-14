@@ -1,16 +1,25 @@
 {
-  "name": "request-pointer",
-  "displayName": "Request-pointer",
+  "name": "RestApiFinder",
+  "displayName": "RestApiFinder",
   "description": "point the http request in ts/js/vue",
-  "version": "0.0.1",
+  "version": "0.0.2",
+  "keywords": [
+    "api"
+  ],
+  "publisher": "qst-itshixun",
   "engines": {
     "vscode": "^1.80.0"
   },
+  "license": "MIT",
+  "icon": "resources/logo.jpg",
   "categories": [
     "Other"
   ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "activationEvents": [
-    "onView:api.views.explorer",
     "onLanguage:javascript",
     "onLanguage:typescript"
   ],
@@ -19,12 +28,32 @@
     "configuration": [
       {
         "type": "object",
-        "title": "requestInstance recognize",
+        "title": "RestApiFinder",
         "properties": {
           "api.requestInstanceRegx": {
             "type": "string",
-            "default": "Axios|axios|api|uapi",
+            "default": "^(Axios|axios|api|uapi)$",
             "description": "regex for recognize requestInstance"
+          },
+          "api.modules": {
+            "type": "array",
+            "default": [
+              {
+                "base": 1171384
+              },
+              {
+                "course": 1206894
+              },
+              {
+                "exam": 951044
+              }
+            ],
+            "description": "restfullApi servername and apifox projectIds"
+          },
+          "apifox.authentication": {
+            "type": "string",
+            "default": "",
+            "description": "apifox authentication code"
           }
         }
       }
@@ -34,15 +63,21 @@
         {
           "id": "api-container",
           "title": "API LIST",
-          "icon": "resources/api-tree-container.svg"
+          "icon": "resources/icons/api-tree-container.svg"
         }
       ]
     },
     "views": {
       "api-container": [
         {
+          "type": "webview",
+          "id": "api.views.search",
+          "name": "filter",
+          "initialSize": 300
+        },
+        {
           "id": "api-tree-view",
-          "name": "Dependencies"
+          "name": "All Request"
         }
       ],
       "explorer": [
@@ -52,21 +87,29 @@
         }
       ]
     },
-    "commands": [
-      {
-        "command": "request-pointer.helloWorld",
-        "title": "Hellots"
-      }
-    ],
     "menus": {
-      "editor/context": [
+      "view/title": [
         {
-          "when": "editorFocus",
-          "command": "request-pointer.helloWorld",
-          "group": "navigation@1"
+          "command": "RestApiFinder.refreshEntry",
+          "when": "view == api-tree-view",
+          "group": "navigation"
         }
       ]
-    }
+    },
+    "commands": [
+      {
+        "command": "RestApiFinder.refreshEntry",
+        "title": "Refresh Tree",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "RestApiFinder.setfilter",
+        "title": "set filter"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -98,8 +141,12 @@
   },
   "dependencies": {
     "@babel/parser": "^7.22.7",
+    "axios": "^1.4.0",
     "globby": "^13.2.2",
     "lodash-es": "^4.17.21",
     "recast": "^0.23.3"
+  },
+  "repository": {
+    "url": "https://github.com/GuoYingxu/restapi-finder.git"
   }
 }

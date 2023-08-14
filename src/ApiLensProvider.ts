@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as ts from "typescript";
 import { finder } from "./apiLensUtil";
+import DataCenter from "./DataCenter";
 /**
  * CodelensProvider
  */
@@ -25,6 +26,13 @@ export class ApiLensProvider implements vscode.CodeLensProvider {
     const list = finder(document);
     list.forEach(m => {
       if (m.range) {
+        const key = m.rawUrl;
+        const api = DataCenter.getServerApi(key);
+        if (api) {
+          console.log("=====matched");
+          m.exist = true;
+          m.serverName = api.serverName;
+        }
         this.codeLenses.push(m);
       }
     });
