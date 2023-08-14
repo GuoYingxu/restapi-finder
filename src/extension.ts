@@ -6,17 +6,11 @@ import { ApiListDataProvider } from "./ApiOutlineProvider"
 import { ApiExploreDataProvider } from "./apiExploreProvider"
 import { FilterViewProvider } from "./viewProvider"
 import axios from "axios"
-import DataCenter from "./DataCenter"
-import { ServerApi } from "./apiLensUtil"
 let disposables: vscode.Disposable[] = []
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  console.log(
-    'Congratulations, your extension "request-pointer" is now active!'
-  )
-
-  const apiExploreDataProvider = new ApiExploreDataProvider(context)
+  // const apiExploreDataProvider = new ApiExploreDataProvider(context)
   //--- apilens
   vscode.languages.registerCodeLensProvider(
     [

@@ -1,11 +1,6 @@
 import * as vscode from "vscode"
 import * as ts from "typescript"
 import DataCenter from "./DataCenter"
-export interface ServerApi {
-  method: string
-  rawUrl: string
-  serverName: string
-}
 export class ApiLens extends vscode.CodeLens {
   private _fileName: string
   private _url: string

@@ -36,12 +36,6 @@ export class ApiLensProvider implements vscode.CodeLensProvider {
         this.codeLenses.push(m)
       }
     })
-    // const range = new vscode.Range(
-    //   new vscode.Position(10, 12),
-    //   new vscode.Position(10, 11)
-    // )
-    // const cl = new vscode.CodeLens(range)
-    // this.codeLenses.push(cl)
     return this.codeLenses
   }
 
