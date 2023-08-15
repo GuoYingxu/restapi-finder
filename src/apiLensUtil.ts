@@ -1,7 +1,7 @@
 import * as vscode from "vscode"
 import * as ts from "typescript"
-import DataCenter from "./DataCenter"
-export class ApiLens extends vscode.CodeLens {
+import { ServerApi, getServerApi } from "./DataCenter"
+export class ApiLensItem extends vscode.CodeLens {
   private _fileName: string
   private _url: string
   private _title: string
@@ -76,7 +76,7 @@ export class ApiLens extends vscode.CodeLens {
   }
 }
 
-export function finder(document: vscode.TextDocument): Array<ApiLens> {
+export function finder(document: vscode.TextDocument): Array<ApiLensItem> {
   try {
     const sfile = ts.createSourceFile(
       document.uri.toString(),
@@ -89,7 +89,7 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
     walker(sfile, collector, document)
     return collector.map(model => {
       const key = model.url.replace(/\${.*?}/g, ":param")
-      const api = DataCenter.getServerApi(key)
+      const api = getServerApi(key)
       let exist = false
       let serverName = ""
       if (api) {
@@ -97,7 +97,7 @@ export function finder(document: vscode.TextDocument): Array<ApiLens> {
         serverName = api.serverName
       }
 
-      return new ApiLens(
+      return new ApiLensItem(
         document.uri.toString(),
         model.range,
         ` [${exist ? "所属服务" + serverName : "未从服务中找到该接口"} ]`,

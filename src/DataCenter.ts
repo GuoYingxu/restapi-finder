@@ -1,3 +1,4 @@
+import * as vscode from "vscode"
 /**
  * 数据处理模块
  *
@@ -43,17 +44,68 @@ function clearServerApi() {
 
 export { getServerApi, addServerApi }
 
+// 模块
+let _modules: string[] = []
+export function setModules(modules: string[]) {
+  _modules = modules
+}
+export function getModules(): string[] {
+  return _modules.sort((a, b) => (a > b ? 1 : -1))
+}
+
 /**
  * 解析出来的请求 对象 结构
  */
 export interface ApiRefs {
+  //接口url
   url: string
+  // 接口方法
   method: string
+  // 格式化后的接口url
   purl: string
-  servername: string
+  // 服务名称(模块名称)
+  moduleName: string
+  // 后端是否存在
   exist: boolean
+  // 文件名称
   fileName: string
-  position: string
+  // 文件地址
+  filePath: string
+  // 文件定位
+  position: vscode.Range
 }
 // 请求对象map
-const apiRefsMap: Map<string, ApiRefs> = new Map()
+// 一个url 可能存在于多个文件中所以value 是list
+const apiRefsMap: Map<string, ApiRefs[]> = new Map()
+
+/**
+ * 清空 apiRefsMap
+ */
+export function clearApiRefs() {
+  apiRefsMap.clear()
+}
+/**
+ * 添加一个 apiRefs
+ * @param key  `${method}:${rawUrl}`格式
+ * @param value
+ */
+export function addApiRefs(key: string, value: ApiRefs[]) {
+  if (value) {
+    apiRefsMap.set(key, value)
+  }
+}
+/**
+ * 根据key 查询apiRefs对象
+ * @param key
+ * @returns
+ */
+export function getApiRefs(key: string): ApiRefs[] | undefined {
+  return apiRefsMap.get(key)
+}
+/**
+ * 获取apiRefs 所有的uri
+ * @returns
+ */
+export function getAllRefsUri(): string[] {
+  return Array.from(apiRefsMap.keys())
+}
