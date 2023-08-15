@@ -147,7 +147,7 @@ function walker(
     case ts.SyntaxKind.CallExpression:
       // 如果节点匹配
       const model = match(node, document)
-      if (model) {
+      if (model && validateModel(model)) {
         collector.push(model)
       }
       break
@@ -158,7 +158,9 @@ function walker(
     return walker(cnode, collector, document)
   })
 }
-
+export function validateModel(apiModel: ApiModel): boolean {
+  return ["GET", "POST", "PUT", "PATCH", "DELETE"].includes(apiModel.method)
+}
 export interface ApiModel {
   method: string
   url: string
@@ -177,7 +179,7 @@ function match(
   // 1. callExpression ->PropertyAccessExpression ->Identifier  is axios
   // 2. callExpression ->Identifier  is axios
   ts.forEachChild(node, cnode => {
-    // 1 axios.get 形式
+    // 1 axios.xxx 形式
     if (ts.isPropertyAccessExpression(cnode)) {
       ts.forEachChild(cnode, ccnode => {
         if (
@@ -225,10 +227,18 @@ function getApiModel(node: ts.Node, document: vscode.TextDocument): ApiModel {
   ts.forEachChild(node, cnode => {
     // axios.get|axios.put|axios.patch|axios.delete 形式
     if (ts.isPropertyAccessExpression(cnode)) {
+      let fixRequest = false
       ts.forEachChild(cnode, ccnode => {
         if (
           ts.isIdentifier(ccnode) &&
-          !matchRequestLib(ccnode.escapedText.toString())
+          matchRequestLib(ccnode.escapedText.toString())
+        ) {
+          fixRequest = true
+        }
+        if (
+          ts.isIdentifier(ccnode) &&
+          !matchRequestLib(ccnode.escapedText.toString()) &&
+          fixRequest
         ) {
           model.method = ccnode.escapedText.toString().toUpperCase()
           const textline = document.lineAt(document.positionAt(ccnode.pos))

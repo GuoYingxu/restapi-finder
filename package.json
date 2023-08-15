@@ -77,13 +77,13 @@
         },
         {
           "id": "api-tree-view",
-          "name": "All Request"
+          "name": "RequestList"
         }
       ],
       "explorer": [
         {
           "id": "api.views.explorer",
-          "name": "api explorer"
+          "name": "RequestExplorer"
         }
       ]
     },
@@ -91,6 +91,11 @@
       "view/title": [
         {
           "command": "RestApiFinder.refreshEntry",
+          "when": "view == api-tree-view",
+          "group": "navigation"
+        },
+        {
+          "command": "RestApiFinder.upload",
           "when": "view == api-tree-view",
           "group": "navigation"
         }
@@ -104,6 +109,11 @@
           "light": "resources/light/refresh.svg",
           "dark": "resources/dark/refresh.svg"
         }
+      },
+      {
+        "command": "RestApiFinder.upload",
+        "title": "uploadAll",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "RestApiFinder.setfilter",

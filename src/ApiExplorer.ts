@@ -1,7 +1,14 @@
 import * as vscode from "vscode"
 import * as path from "path"
 import { initRoot, parseModuleName, parseWorkspace } from "./ApiExplorerUtil"
-import { ApiRefs, getAllRefsUri, getApiRefs, getModules } from "./DataCenter"
+import {
+  ApiRefs,
+  getAllRefsUri,
+  getApiRefs,
+  getModules,
+  asyncApiRefs,
+  clearApiRefs,
+} from "./DataCenter"
 /**
  * apiExplorer
  * 展示整个项目所有的接口
@@ -37,11 +44,19 @@ export class ApiExplorer {
     context.subscriptions.push(this.apiExplorerTreeView)
     // 注册事件： 工作区改变
     const workspaceDisposible = vscode.workspace.onDidChangeWorkspaceFolders(
-      () => this.update()
+      () => this.update("workspace")
     )
     // 注册事件： 配置变更
-    const configDisposible = vscode.workspace.onDidChangeConfiguration(() =>
-      this.update()
+    const configDisposible = vscode.workspace.onDidChangeConfiguration(
+      event => {
+        const configList = ["api.requestInstanceRegx", "api.modules"]
+        const affected = configList.some(item =>
+          event.affectsConfiguration(item)
+        )
+        if (affected) {
+          this.update("config")
+        }
+      }
     )
     context.subscriptions.push(workspaceDisposible, configDisposible)
     disposibles.push(workspaceDisposible, configDisposible)
@@ -49,19 +64,22 @@ export class ApiExplorer {
     // 刷新按钮
     context.subscriptions.push(
       vscode.commands.registerCommand("RestApiFinder.refreshEntry", () =>
-        this.update()
+        this.update("refresh")
       ),
       vscode.commands.registerCommand("RestApiFinder.setfilter", filter => {
         this.apiExplorerDataProvider.updateFilter(filter)
+      }),
+      vscode.commands.registerCommand("RestApiFinder.upload", () => {
+        asyncApiRefs()
       })
     )
 
-    this.update()
+    this.update("init")
   }
   /**
    * 更新数据
    */
-  async update() {
+  async update(tag: string) {
     this.apiExplorerDataProvider.clear(vscode.workspace.workspaceFolders)
     await this.apiExplorerDataProvider.rebuild()
   }
@@ -96,6 +114,7 @@ export interface ApiFileNode {
   count?: number
   //exist
   exist?: boolean
+  projectName?: string
 }
 /**
  * treeData Provider
@@ -155,38 +174,38 @@ export class ApiExploreDataProvider
     if (element === undefined) {
       return this.nodes
     }
-    // 过滤
-    if (this._filter) {
-      let children = element.nodes.map(node => {
-        if (node.type === "api") {
+
+    let children = element.nodes.map(node => {
+      if (node.type === "api") {
+        if (this._filter) {
           if (new RegExp(`${this._filter}`, "ig").test(node.label)) {
             node.visible = true
           } else {
             node.visible = false
           }
         }
-        if (node.type === "module") {
-          let c = node.nodes.filter(n => {
-            let match = new RegExp(`${this._filter}`, "ig").test(n.label)
-            return match
-          })
-          if (c.length > 0) {
-            node.visible = true
-            node.count = c.length
-          } else {
-            node.visible = false
+      }
+      if (node.type === "module") {
+        let c = node.nodes.filter(n => {
+          if (this._filter) {
+            return new RegExp(`${this._filter}`, "ig").test(n.label)
           }
-        }
-        return node
-      })
-      return children
-        .filter(node => {
-          return node.visible
+          return true
         })
-        .sort((a, b) => (a.label > b.label ? 1 : -1))
-    }
-
-    return element.nodes.sort((a, b) => (a.label > b.label ? 1 : -1))
+        if (c.length > 0) {
+          node.visible = true
+          node.count = c.length
+        } else {
+          node.visible = false
+        }
+      }
+      return node
+    })
+    return children
+      .filter(node => {
+        return node.visible
+      })
+      .sort((a, b) => (a.label > b.label ? 1 : -1))
   }
 
   public updateFilter(filter: string) {
@@ -203,9 +222,9 @@ export class ApiExploreDataProvider
     }
   }
 
-  public addWorkSpaceFolders() {
+  public async addWorkSpaceFolders() {
     if (this.workspaceFolders) {
-      this.nodes = initRoot(this.workspaceFolders)
+      this.nodes = await initRoot(this.workspaceFolders)
     } else {
       vscode.window.showErrorMessage("找到不项目根目录!")
     }
@@ -214,9 +233,10 @@ export class ApiExploreDataProvider
    * 重新构建数据
    */
   public async rebuild() {
+    clearApiRefs()
     if (this.workspaceFolders) {
       // 构建跟节点
-      this.addWorkSpaceFolders()
+      await this.addWorkSpaceFolders()
       await parseWorkspace(this.workspaceFolders)
       //构建树
       // --rootNode
@@ -241,6 +261,22 @@ export class ApiExploreDataProvider
               visible: childrens.length > 0,
               isFolder: false,
             })
+          })
+          const others = getAllRefsUri().filter(path => {
+            return !configModules.includes(parseModuleName(path))
+          })
+          const otherChildrens = others.map(key =>
+            this.buildChildren(key, rootNode)
+          )
+          rootNode.nodes.push({
+            isWorkspaceNode: false,
+            type: "module",
+            label: "otherModule",
+            nodes: otherChildrens,
+            fsPath: rootNode.fsPath,
+            count: otherChildrens.length,
+            visible: otherChildrens.length > 0,
+            isFolder: false,
           })
         } else {
           getAllRefsUri().forEach(key => {
@@ -347,6 +383,9 @@ export class ApiExploreDataProvider
     // appName ，返回模块名称 + 接口数量
     if (element.type === "module") {
       return `${element.label}(${element.count})`
+    }
+    if (element.type === "api") {
+      return `${element.url}${element.exist ? "" : "[未找到]"}`
     }
     return element.label
   }

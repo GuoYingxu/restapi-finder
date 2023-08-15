@@ -42,12 +42,19 @@ export class ApiOutlineTreeDataProvider
     private readonly context: vscode.ExtensionContext,
     disposibles: vscode.Disposable[]
   ) {
-    const configChange = vscode.workspace.onDidChangeConfiguration(() =>
-      this.didChange()
-    )
+    const configChange = vscode.workspace.onDidChangeConfiguration(event => {
+      const configList = ["api.requestInstanceRegx", "api.modules"]
+      const affected = configList.some(item => event.affectsConfiguration(item))
+      if (affected) {
+        this.didChange()
+      }
+    })
     const activeTextChange = vscode.window.onDidChangeActiveTextEditor(() =>
       this.didChange()
     )
+    const activeEditorChange = vscode.workspace.onDidChangeTextDocument(() => {
+      this.didChange()
+    })
     context.subscriptions.push(configChange, activeTextChange)
     disposibles.push(configChange, activeTextChange)
 
@@ -76,11 +83,14 @@ export class ApiOutlineTreeDataProvider
     this._onDidChangeTreeData.fire()
   }
   public didChange() {
+    console.log("didchage")
+    this.models = []
     this.buildTree()
     this.refresh()
   }
 
   public buildTree() {
+    console.log("buildtree")
     const editor = vscode.window.activeTextEditor
     if (editor) {
       const map: Map<string, ApiRefs[]> = new Map()
@@ -171,13 +181,16 @@ export class ApiOutlineTreeDataProvider
     if (element.type === "module") {
       return `${element.label}(${element.count})`
     }
+    if (element.type === "api") {
+      return `${element.url}${element.exist ? "" : "[未找到]"}`
+    }
     return element.label
   }
 
   public getChildren(element?: ApiFileNode | undefined): ApiFileNode[] {
     return element
       ? element.nodes.sort((a, b) => (a.label > b.label ? 1 : -1))
-      : this.models
+      : this.models.sort((a, b) => (a.label > b.label ? 1 : -1))
   }
 
   /**

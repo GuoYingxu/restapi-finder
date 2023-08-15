@@ -6,8 +6,8 @@ export class Configuration {
     context: vscode.ExtensionContext,
     disposables: vscode.Disposable[]
   ) {
-    const disposable = vscode.workspace.onDidChangeConfiguration(
-      () => this.init
+    const disposable = vscode.workspace.onDidChangeConfiguration(() =>
+      this.init()
     )
     context.subscriptions.push(disposable)
     disposables.push(disposable)

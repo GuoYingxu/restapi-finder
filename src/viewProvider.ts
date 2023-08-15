@@ -20,7 +20,6 @@ export class FilterViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview)
 
     webviewView.webview.onDidReceiveMessage(data => {
-      console.log(data)
       switch (data.type) {
         case "apifilter": {
           vscode.commands.executeCommand("RestApiFinder.setfilter", data.value)

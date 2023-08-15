@@ -8,27 +8,55 @@ import {
   addApiRefs,
   getApiRefs,
   getModules,
+  getProjectName,
   getServerApi,
+  setProjectName,
+  setVersion,
 } from "./DataCenter"
+import path = require("path")
+import * as fs from "fs"
 
-export function initRoot(
+export async function initRoot(
   folders: readonly vscode.WorkspaceFolder[]
-): ApiFileNode[] {
-  console.log("initRoot")
-  return folders.map((folder): ApiFileNode => {
-    return {
-      isWorkspaceNode: true,
-      type: "root",
-      label: folder.uri.scheme === "file" ? folder.name : folder.uri.authority,
-      nodes: [],
-      fsPath:
-        folder.uri.scheme === "file"
-          ? folder.uri.fsPath
-          : folder.uri.authority + folder.uri.fsPath,
-      visible: true,
-      isFolder: true,
+): Promise<ApiFileNode[]> {
+  return Promise.all(
+    folders.map(async (folder): Promise<ApiFileNode> => {
+      await parseProjectName(folder)
+      return {
+        isWorkspaceNode: true,
+        type: "root",
+        label:
+          folder.uri.scheme === "file" ? folder.name : folder.uri.authority,
+        nodes: [],
+        fsPath:
+          folder.uri.scheme === "file"
+            ? folder.uri.fsPath
+            : folder.uri.authority + folder.uri.fsPath,
+        visible: true,
+        isFolder: true,
+      }
+    })
+  )
+}
+
+export async function parseProjectName(
+  folder: vscode.WorkspaceFolder
+): Promise<void> {
+  const pkgpath = path.join(folder.uri.fsPath, "package.json")
+  const existed = await fs.existsSync(pkgpath)
+  if (existed) {
+    const content = fs.readFileSync(pkgpath, { encoding: "utf-8" })
+    try {
+      const pkgJson = JSON.parse(content)
+      setVersion(pkgJson.version)
+      setProjectName(pkgJson.name)
+    } catch (e) {
+      console.log(e)
+      return
     }
-  })
+  }
+  console.log("未找到 package.json")
+  return Promise.resolve()
 }
 /**
  * 解析项目

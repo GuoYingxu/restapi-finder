@@ -1,3 +1,4 @@
+import axios from "axios"
 import * as vscode from "vscode"
 /**
  * 数据处理模块
@@ -108,4 +109,68 @@ export function getApiRefs(key: string): ApiRefs[] | undefined {
  */
 export function getAllRefsUri(): string[] {
   return Array.from(apiRefsMap.keys())
+}
+
+export function asyncApiRefs(): void {
+  const url = "http://localhost:3000/apimanage/uploadAllClientrefs"
+
+  axios
+    .post(url, { clientName: projectName, list: transformList() })
+    .then(res => {
+      vscode.window.showInformationMessage("上传完成！")
+    })
+    .catch(err => {
+      console.log(err)
+      vscode.window.showErrorMessage("上传失败！", err.message)
+    })
+}
+
+function transformList() {
+  return Array.from(apiRefsMap.keys())
+    .map(key => {
+      const refs = apiRefsMap.get(key)
+      if (refs && refs.length > 0) {
+        const ref = refs[0]
+        const method = ref.method
+        const uri = ref.url
+        const puri = ref.purl
+        const serverName = ref.moduleName
+        const files = refs
+          .map(r => {
+            const url = r.filePath.replace(/.*\/(src\/)(.*)/, "$1$2")
+            return `${url}:${(r.position.start, r.position.end)}`
+          })
+          .join(",")
+        return {
+          clientName: projectName,
+          version: projectVersion,
+          evnName: "develop",
+          method: method,
+          uri: uri,
+          puri: puri,
+          serverName: serverName,
+          files: files,
+        }
+      } else {
+        return undefined
+      }
+    })
+    .filter(item => !!item)
+}
+
+// function getClientName()
+
+let projectName: string
+let projectVersion: string
+export function setProjectName(name: string) {
+  projectName = name
+}
+export function getProjectName(): string {
+  return projectName
+}
+export function setVersion(version: string) {
+  projectVersion = version
+}
+export function getVersion(): string {
+  return projectVersion
 }
