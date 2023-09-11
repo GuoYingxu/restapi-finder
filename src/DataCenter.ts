@@ -112,8 +112,11 @@ export function getAllRefsUri(): string[] {
 }
 
 export function asyncApiRefs(): void {
-  const url = "http://localhost:3000/apimanage/uploadAllClientrefs"
-
+  const host = vscode.workspace.getConfiguration().get("api.server")
+  if (!host) {
+    return
+  }
+  const url = joinPath(host.toString(), "/apimanage/uploadAllClientrefs")
   axios
     .post(url, { clientName: projectName, list: transformList() })
     .then(res => {
@@ -173,4 +176,10 @@ export function setVersion(version: string) {
 }
 export function getVersion(): string {
   return projectVersion
+}
+
+export function joinPath(host: string, url: string): string {
+  if (!host) return url
+  if (!url) return host
+  return host.replace(/\/$/, "") + "/" + url.replace(/^\//, "")
 }

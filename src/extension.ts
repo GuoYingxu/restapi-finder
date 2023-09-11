@@ -6,7 +6,7 @@ import { FilterViewProvider } from "./viewProvider"
 import axios from "axios"
 import { Configuration } from "./Configuration"
 import { ApiExplorer, ApiFileNode } from "./ApiExplorer"
-import { ServerApi, addServerApi } from "./DataCenter"
+import { ServerApi, addServerApi, joinPath } from "./DataCenter"
 import { ApiOutline } from "./ApiOutline"
 let disposables: vscode.Disposable[] = []
 // This method is called when your extension is activated
@@ -54,28 +54,30 @@ export function activate(context: vscode.ExtensionContext) {
       }
     )
   )
-
-  axios
-    .get("http://localhost:3000/apimanage/serverapiforPlugin")
-    .then(res => {
-      res.data.forEach((api: any) => {
-        if (!api.method || !api.puri) return
-        let rawUrl = ""
-        if (api.puri && api.puri.indexOf("=>") > 0) {
-          rawUrl = `/api/${api.server}/${api.puri.split("=>")[1]}`
-        }
-        const sapi: ServerApi = {
-          serverName: api.server,
-          rawUrl: rawUrl,
-          method: api.method.toUpperCase(),
-        }
-        addServerApi(sapi)
+  const host = vscode.workspace.getConfiguration().get("api.server")
+  if (host) {
+    const url = joinPath(host.toString(), "/apimanage/serverapiforPlugin")
+    axios
+      .get(url)
+      .then(res => {
+        res.data.forEach((api: any) => {
+          if (!api.method || !api.puri) return
+          let rawUrl = ""
+          if (api.puri && api.puri.indexOf("=>") > 0) {
+            rawUrl = `/api/${api.server}/${api.puri.split("=>")[1]}`
+          }
+          const sapi: ServerApi = {
+            serverName: api.server,
+            rawUrl: rawUrl,
+            method: api.method.toUpperCase(),
+          }
+          addServerApi(sapi)
+        })
       })
-    })
-    .catch(err => {
-      vscode.window.showInformationMessage("获取远程接口信息失败！")
-    })
-
+      .catch(err => {
+        vscode.window.showInformationMessage("获取远程接口信息失败！")
+      })
+  }
   // search view
   const viewProvider = new FilterViewProvider(context.extensionUri)
   const viewDisposable = vscode.window.registerWebviewViewProvider(

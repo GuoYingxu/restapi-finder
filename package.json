@@ -50,11 +50,16 @@
             ],
             "description": "restfullApi servername and apifox projectIds"
           },
+          "api.server":{
+            "type": "string",
+            "description": "api server host"
+          },
           "apifox.authentication": {
             "type": "string",
             "default": "",
             "description": "apifox authentication code"
           }
+
         }
       }
     ],
