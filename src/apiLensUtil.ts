@@ -17,7 +17,7 @@ export class ApiLensItem extends vscode.CodeLens {
   ) {
     super(range, {
       arguments: ["1", false],
-      command: "RestApiFinder.codelensAction",
+      command: "QstDevToolkit.codelensAction",
       title: title,
     })
     this._url = url
@@ -33,12 +33,12 @@ export class ApiLensItem extends vscode.CodeLens {
 
   get label() {
     return (
-      this._title.replace(/\${.*?}/g, ":param") +
+      this._title.replace(/\${.*?}/g, "{param}") +
       `(${this.exist ? this.serverName : "未找到服务"})`
     )
   }
   get rawUrl() {
-    return this._url.replace(/\${.*?}/g, ":param")
+    return this._url.replace(/\${.*?}/g, "{param}")
   }
   get method() {
     return this._method.toUpperCase()
@@ -88,7 +88,7 @@ export function finder(document: vscode.TextDocument): Array<ApiLensItem> {
     // 遍历node
     walker(sfile, collector, document)
     return collector.map(model => {
-      const key = model.url.replace(/\${.*?}/g, ":param")
+      const key = model.url.replace(/\${.*?}/g, "{param}")
       const api = getServerApi(key)
       let exist = false
       let serverName = ""

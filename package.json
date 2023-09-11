@@ -1,10 +1,10 @@
 {
-  "name": "RestApiFinder",
-  "displayName": "RestApiFinder",
-  "description": "point the http request in ts/js/vue",
+  "name": "qst-dev-toolkit",
+  "displayName": "QstDevToolkit",
+  "description": "青软内部开发工具",
   "version": "0.0.2",
   "keywords": [
-    "api"
+    "api","qst"
   ],
   "publisher": "qst-itshixun",
   "engines": {
@@ -28,7 +28,7 @@
     "configuration": [
       {
         "type": "object",
-        "title": "RestApiFinder",
+        "title": "QstDevToolkit",
         "properties": {
           "api.requestInstanceRegx": {
             "type": "string",
@@ -90,12 +90,12 @@
     "menus": {
       "view/title": [
         {
-          "command": "RestApiFinder.refreshEntry",
+          "command": "QstDevToolkit.refreshEntry",
           "when": "view == api-tree-view",
           "group": "navigation"
         },
         {
-          "command": "RestApiFinder.upload",
+          "command": "QstDevToolkit.upload",
           "when": "view == api-tree-view",
           "group": "navigation"
         }
@@ -103,7 +103,7 @@
     },
     "commands": [
       {
-        "command": "RestApiFinder.refreshEntry",
+        "command": "QstDevToolkit.refreshEntry",
         "title": "Refresh Tree",
         "icon": {
           "light": "resources/light/refresh.svg",
@@ -111,12 +111,12 @@
         }
       },
       {
-        "command": "RestApiFinder.upload",
+        "command": "QstDevToolkit.upload",
         "title": "uploadAll",
         "icon": "$(cloud-upload)"
       },
       {
-        "command": "RestApiFinder.setfilter",
+        "command": "QstDevToolkit.setfilter",
         "title": "set filter"
       }
     ]

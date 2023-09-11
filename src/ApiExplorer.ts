@@ -63,13 +63,13 @@ export class ApiExplorer {
 
     // 刷新按钮
     context.subscriptions.push(
-      vscode.commands.registerCommand("RestApiFinder.refreshEntry", () =>
+      vscode.commands.registerCommand("QstDevToolkit.refreshEntry", () =>
         this.update("refresh")
       ),
-      vscode.commands.registerCommand("RestApiFinder.setfilter", filter => {
+      vscode.commands.registerCommand("QstDevToolkit.setfilter", filter => {
         this.apiExplorerDataProvider.updateFilter(filter)
       }),
-      vscode.commands.registerCommand("RestApiFinder.upload", () => {
+      vscode.commands.registerCommand("QstDevToolkit.upload", () => {
         asyncApiRefs()
       })
     )

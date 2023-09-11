@@ -140,7 +140,7 @@ function transformList() {
             const url = r.filePath.replace(/.*\/(src\/)(.*)/, "$1$2")
             return `${url}:${(r.position.start, r.position.end)}`
           })
-          .join(",")
+          .join(";")
         return {
           clientName: projectName,
           version: projectVersion,

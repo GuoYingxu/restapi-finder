@@ -22,8 +22,8 @@ export class FilterViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage(data => {
       switch (data.type) {
         case "apifilter": {
-          vscode.commands.executeCommand("RestApiFinder.setfilter", data.value)
-          vscode.commands.executeCommand("RestApiFinder.refreshEntry")
+          vscode.commands.executeCommand("QstDevToolkit.setfilter", data.value)
+          vscode.commands.executeCommand("QstDevToolkit.refreshEntry")
           break
         }
       }

@@ -20,7 +20,7 @@ export class ApiLens {
     )
 
     const disposable = vscode.commands.registerCommand(
-      "RestApiFinder.codelensAction",
+      "QstDevToolkit.codelensAction",
       (args: any) => {
         vscode.window.showInformationMessage(
           `CodeLens action clicked with args=${args}`

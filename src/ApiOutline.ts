@@ -101,8 +101,8 @@ export class ApiOutlineTreeDataProvider
         if (!moduleNames.includes(moduleName)) {
           moduleName = "otherModule"
         }
-        // 参数替换成:param
-        const rawUrl = api.url.replace(/\${.*?}/g, ":param")
+        // 参数替换成{param}
+        const rawUrl = api.url.replace(/\${.*?}/g, "{param}")
         let sapi = getServerApi(rawUrl)
         // 请求对象
         const apiRefs: ApiRefs = {
