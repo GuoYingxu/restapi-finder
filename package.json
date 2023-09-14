@@ -2,7 +2,7 @@
   "name": "qst-dev-toolkit",
   "displayName": "QstDevToolkit",
   "description": "青软内部开发工具",
-  "version": "0.0.2",
+  "version": "1.0.1",
   "keywords": [
     "api","qst"
   ],
@@ -135,7 +135,9 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build-package":"vsce package",
+    "build-publish":"vsce publish"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
