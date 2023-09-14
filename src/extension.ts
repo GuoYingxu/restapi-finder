@@ -60,16 +60,18 @@ export function activate(context: vscode.ExtensionContext) {
     axios
       .get(url)
       .then(res => {
+        console.log(res.data.length)
         res.data.forEach((api: any) => {
-          if (!api.method || !api.puri) return
-          let rawUrl = ""
-          if (api.puri && api.puri.indexOf("=>") > 0) {
-            rawUrl = `/api/${api.server}/${api.puri.split("=>")[1]}`
-          }
+          if (!api.puri) return
           const sapi: ServerApi = {
             serverName: api.server,
-            rawUrl: rawUrl,
-            method: api.method.toUpperCase(),
+            rawUrl: api.puri,
+            method: api.method?.toUpperCase(),
+          }
+          if (api.puri === "/api/admin/majors/{param}") {
+            console.log(
+              "===========================================/api/admin/majors/{param}"
+            )
           }
           addServerApi(sapi)
         })

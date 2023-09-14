@@ -111,7 +111,7 @@ export async function parseWorkspace(
           }
 
           // 参数替换成{param}
-          const rawUrl = api.url.replace(/\${.*?}/g, "{param}")
+          const rawUrl = api.url.replace(/\${.*?}/g, "{params}")
           let sapi = getServerApi(rawUrl)
           // 请求对象
           const apiRefs: ApiRefs = {

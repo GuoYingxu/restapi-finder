@@ -102,8 +102,10 @@ export class ApiOutlineTreeDataProvider
           moduleName = "otherModule"
         }
         // 参数替换成{param}
-        const rawUrl = api.url.replace(/\${.*?}/g, "{param}")
+        const rawUrl = api.url.replace(/\${.*?}/g, "{params}")
+        console.log("outlin::::::: rawUrl:", rawUrl)
         let sapi = getServerApi(rawUrl)
+        console.log("outlin::::::: sapi:", sapi)
         // 请求对象
         const apiRefs: ApiRefs = {
           url: api.url,
